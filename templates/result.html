@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Prediction Result</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0e0e10;
+      --card: #18181b;
+      --border: #2a2a2f;
+      --text: #f0efe8;
+      --muted: #7a7a82;
+      --accent: #c8f060;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(200,240,96,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(200,240,96,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    .wrapper {
+      width: 100%;
+      max-width: 580px;
+      animation: fadeUp 0.6s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .error-card {
+      background: var(--card);
+      border: 1px solid #ff4444;
+      border-radius: 16px;
+      padding: 2rem;
+      text-align: center;
+    }
+    .error-card h2 { color: #ff6666; margin-bottom: 0.5rem; }
+    .error-card p  { color: var(--muted); font-size: 0.9rem; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    /* Score section */
+    .score-section {
+      padding: 2.5rem 2.5rem 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .label-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: rgba(200,240,96,0.1);
+      border: 1px solid rgba(200,240,96,0.2);
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-bottom: 1.5rem;
+    }
+
+    .score-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .score-num {
+      font-family: 'DM Serif Display', serif;
+      font-size: 88px;
+      line-height: 1;
+      color: var(--accent);
+      letter-spacing: -2px;
+    }
+
+    .score-meta { padding-bottom: 12px; }
+
+    .score-out {
+      font-size: 18px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .grade-badge {
+      display: inline-block;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 4px 14px;
+      border-radius: 8px;
+    }
+
+    .grade-aplus { background: rgba(200,240,96,0.15); color: #c8f060; border: 1px solid rgba(200,240,96,0.3); }
+    .grade-a     { background: rgba(100,220,180,0.15); color: #64dcb4; border: 1px solid rgba(100,220,180,0.3); }
+    .grade-bplus { background: rgba(100,180,255,0.15); color: #64b4ff; border: 1px solid rgba(100,180,255,0.3); }
+    .grade-b     { background: rgba(160,140,255,0.15); color: #a08cff; border: 1px solid rgba(160,140,255,0.3); }
+    .grade-c     { background: rgba(255,200,80,0.15);  color: #ffc850; border: 1px solid rgba(255,200,80,0.3); }
+    .grade-f     { background: rgba(255,80,80,0.15);   color: #ff5050; border: 1px solid rgba(255,80,80,0.3); }
+
+    .bar-wrap {
+      height: 6px;
+      background: var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 999px;
+      transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+      width: 0;
+    }
+
+    /* Sections */
+    .section {
+      padding: 1.75rem 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+
+    /* Stats grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .stat-item {
+      background: #1e1e22;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+    }
+
+    .stat-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+    .stat-value { font-size: 16px; font-weight: 500; color: var(--text); }
+
+    /* Chart section */
+    .chart-wrap {
+      position: relative;
+      height: 260px;
+      width: 100%;
+    }
+
+    /* Factor bars (custom) */
+    .factor-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .factor-row { display: flex; flex-direction: column; gap: 5px; }
+
+    .factor-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .factor-name { font-size: 12px; color: var(--muted); }
+    .factor-pct  { font-size: 12px; font-weight: 500; color: var(--text); }
+
+    .factor-track {
+      height: 6px;
+      background: var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .factor-fill {
+      height: 100%;
+      border-radius: 999px;
+      width: 0;
+      transition: width 1s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* Message */
+    .message-text {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .message-text span { color: var(--text); font-weight: 500; }
+
+    /* Footer */
+    .footer {
+      padding: 1.5rem 2rem;
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 11px;
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      display: block;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn:hover  { opacity: 0.85; }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary   { background: var(--accent); color: #0e0e10; border: none; }
+    .btn-secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+  </style>
+</head>
+<body>
+
+<div class="wrapper">
+
+  {% if error %}
+  <div class="error-card">
+    <h2>⚠️ Prediction Failed</h2>
+    <p>{{ error }}</p>
+    <br>
+    <a href="/" style="color: var(--accent);">← Try Again</a>
+  </div>
+
+  {% else %}
+  <div class="card">
+
+    <!-- Score -->
+    <div class="score-section">
+      <div class="label-tag">Prediction Result</div>
+      <div class="score-row">
+        <div class="score-num" id="scoreNum">0</div>
+        <div class="score-meta">
+          <span class="score-out">/ 100</span>
+          <span class="grade-badge grade-{{ grade | lower | replace('+','plus') }}">Grade {{ grade }}</span>
+        </div>
+      </div>
+      <div class="bar-wrap">
+        <div class="bar-fill" id="barFill"></div>
+      </div>
+    </div>
+
+    <!-- Input Summary -->
+    <div class="section">
+      <p class="section-title">Input Summary</p>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-label">Hours Studied</div>
+          <div class="stat-value">{{ hours }} hrs/week</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Attendance</div>
+          <div class="stat-value">{{ attendance }}%</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Previous Scores</div>
+          <div class="stat-value">{{ previous }}</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Motivation</div>
+          <div class="stat-value">{{ motivation }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Factor Impact Chart -->
+    <div class="section">
+      <p class="section-title">Factor Impact Analysis</p>
+      <div class="factor-list" id="factorList"></div>
+    </div>
+
+    <!-- Radar Chart -->
+    <div class="section">
+      <p class="section-title">Performance Radar</p>
+      <div class="chart-wrap">
+        <canvas id="radarChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Message -->
+    <div class="section">
+      <p class="message-text">
+        {% if score >= 90 %}
+          <span>Outstanding performance!</span> Keep up the excellent study habits and high attendance. You're in the top tier.
+        {% elif score >= 80 %}
+          <span>Great result!</span> Strong effort showing. A little more consistency can push you to the top.
+        {% elif score >= 70 %}
+          <span>Good work!</span> You're above average. Focus on improving attendance and study hours to score higher.
+        {% elif score >= 60 %}
+          <span>Average performance.</span> Consider increasing study hours and seeking tutoring to improve significantly.
+        {% else %}
+          <span>Needs improvement.</span> Focus on attendance, study hours, and getting support from tutors and family.
+        {% endif %}
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <a href="/" class="btn btn-primary">Predict Again</a>
+      <a href="/" class="btn btn-secondary">← Home</a>
+    </div>
+
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+  // ── Score counter animation ──
+  const finalScore = parseFloat("{{ score | default(0) }}");
+  const duration = 1200;
+  const start = performance.now();
+  function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+  function animate(now) {
+    const progress = Math.min((now - start) / duration, 1);
+    document.getElementById('scoreNum').textContent = Math.round(easeOut(progress) * finalScore);
+    if (progress < 1) requestAnimationFrame(animate);
+    else document.getElementById('scoreNum').textContent = finalScore;
+  }
+  requestAnimationFrame(animate);
+  setTimeout(() => {
+    document.getElementById('barFill').style.width = Math.min(finalScore, 100) + '%';
+  }, 100);
+
+  // ── Factor data from Flask ──
+  const hours      = parseFloat("{{ hours | default(0) }}");
+  const attendance = parseFloat("{{ attendance | default(0) }}");
+  const previous   = parseFloat("{{ previous | default(0) }}");
+  const tutoring   = parseFloat("{{ tutoring | default(0) }}");
+  const sleep      = parseFloat("{{ sleep | default(7) }}");
+  const physical   = parseFloat("{{ physical | default(3) }}");
+  const motivation = "{{ motivation | default('Medium') }}";
+  const parental   = "{{ parental | default('Medium') }}";
+  const resources  = "{{ resources | default('Medium') }}";
+  const teacher    = "{{ teacher | default('Medium') }}";
+
+  // ── Normalize each factor to 0–100 scale for display ──
+  function norm(val, min, max) {
+    return Math.round(Math.min(Math.max((val - min) / (max - min) * 100, 0), 100));
+  }
+  function catScore(val) {
+    return val === 'High' ? 100 : val === 'Medium' ? 55 : 20;
+  }
+  function sleepScore(h) {
+    // 7-8 hrs optimal
+    if (h >= 7 && h <= 8) return 100;
+    if (h === 6 || h === 9) return 70;
+    return 35;
+  }
+
+  const factors = [
+    { name: "Study Hours",          value: norm(hours, 0, 44),       color: "#c8f060" },
+    { name: "Attendance",           value: norm(attendance, 60, 100), color: "#64dcb4" },
+    { name: "Previous Scores",      value: norm(previous, 50, 100),  color: "#64b4ff" },
+    { name: "Motivation Level",     value: catScore(motivation),      color: "#a08cff" },
+    { name: "Parental Involvement", value: catScore(parental),        color: "#ffc850" },
+    { name: "Access to Resources",  value: catScore(resources),       color: "#ff9060" },
+    { name: "Teacher Quality",      value: catScore(teacher),         color: "#60d4f0" },
+    { name: "Tutoring Sessions",    value: norm(tutoring, 0, 8),      color: "#f060a0" },
+    { name: "Sleep Quality",        value: sleepScore(sleep),         color: "#c8f060" },
+    { name: "Physical Activity",    value: norm(physical, 0, 6),      color: "#80ff80" },
+  ];
+
+  // ── Render factor bars ──
+  const list = document.getElementById('factorList');
+  factors.forEach((f, i) => {
+    const row = document.createElement('div');
+    row.className = 'factor-row';
+    row.innerHTML = `
+      <div class="factor-meta">
+        <span class="factor-name">${f.name}</span>
+        <span class="factor-pct">${f.value}%</span>
+      </div>
+      <div class="factor-track">
+        <div class="factor-fill" id="ff${i}" style="background:${f.color}"></div>
+      </div>`;
+    list.appendChild(row);
+  });
+
+  // Animate bars with stagger
+  factors.forEach((f, i) => {
+    setTimeout(() => {
+      document.getElementById('ff' + i).style.width = f.value + '%';
+    }, 200 + i * 80);
+  });
+
+  // ── Radar Chart ──
+  const radarLabels = ["Study", "Attendance", "Prev. Score", "Motivation", "Parental", "Resources"];
+  const radarData   = [
+    norm(hours, 0, 44),
+    norm(attendance, 60, 100),
+    norm(previous, 50, 100),
+    catScore(motivation),
+    catScore(parental),
+    catScore(resources),
+  ];
+
+  const ctx = document.getElementById('radarChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: radarLabels,
+      datasets: [{
+        label: 'Your Profile',
+        data: radarData,
+        backgroundColor: 'rgba(200, 240, 96, 0.12)',
+        borderColor: '#c8f060',
+        borderWidth: 2,
+        pointBackgroundColor: '#c8f060',
+        pointBorderColor: '#0e0e10',
+        pointRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 1200, easing: 'easeOutQuart' },
+      scales: {
+        r: {
+          min: 0, max: 100,
+          ticks: {
+            stepSize: 25,
+            color: '#7a7a82',
+            font: { size: 10, family: 'DM Sans' },
+            backdropColor: 'transparent',
+          },
+          grid:        { color: 'rgba(255,255,255,0.06)' },
+          angleLines:  { color: 'rgba(255,255,255,0.06)' },
+          pointLabels: { color: '#f0efe8', font: { size: 12, family: 'DM Sans' } },
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#18181b',
+          borderColor: '#2a2a2f',
+          borderWidth: 1,
+          titleColor: '#f0efe8',
+          bodyColor: '#7a7a82',
+          titleFont: { family: 'DM Sans' },
+          bodyFont:  { family: 'DM Sans' },
+          callbacks: { label: ctx => ` Score: ${ctx.raw}%` }
+        }
+      }
+    }
+  });
+</script>
+
+</body>
+</html>

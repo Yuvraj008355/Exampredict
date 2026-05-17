@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Student Performance Predictor</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0e0e10;
+      --card: #18181b;
+      --border: #2a2a2f;
+      --text: #f0efe8;
+      --muted: #7a7a82;
+      --accent: #c8f060;
+      --input-bg: #1e1e22;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(200,240,96,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(200,240,96,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    .wrapper {
+      max-width: 620px;
+      margin: 0 auto;
+      animation: fadeUp 0.6s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+      padding-top: 1rem;
+    }
+
+    .header-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: rgba(200,240,96,0.1);
+      border: 1px solid rgba(200,240,96,0.2);
+      padding: 4px 14px;
+      border-radius: 999px;
+      margin-bottom: 1rem;
+    }
+
+    .header h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 36px;
+      font-weight: 400;
+      color: var(--text);
+      line-height: 1.2;
+      margin-bottom: 0.5rem;
+    }
+
+    .header h1 span { color: var(--accent); }
+
+    .header p {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    /* Card */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    /* Section */
+    .section {
+      padding: 1.75rem 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section:last-of-type { border-bottom: none; }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1.1rem;
+    }
+
+    /* Grid */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+    @media (max-width: 500px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    }
+
+    /* Field */
+    .field { display: flex; flex-direction: column; gap: 6px; }
+
+    .field label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    /* Range slider */
+    .range-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .range-row input[type=range] {
+      flex: 1;
+      -webkit-appearance: none;
+      height: 4px;
+      background: var(--border);
+      border-radius: 999px;
+      outline: none;
+    }
+
+    .range-row input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      border: 2px solid var(--bg);
+    }
+
+    .range-val {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--accent);
+      min-width: 32px;
+      text-align: right;
+    }
+
+    /* Select */
+    select {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      padding: 9px 12px;
+      outline: none;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237a7a82' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      transition: border-color 0.15s;
+    }
+
+    select:hover, select:focus {
+      border-color: rgba(200,240,96,0.4);
+    }
+
+    select option {
+      background: #1e1e22;
+      color: var(--text);
+    }
+
+    /* Submit button */
+    .footer {
+      padding: 1.5rem 2rem;
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 13px;
+      background: var(--accent);
+      color: #0e0e10;
+      border: none;
+      border-radius: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      letter-spacing: 0.01em;
+    }
+
+    .btn-submit:hover  { opacity: 0.88; }
+    .btn-submit:active { transform: scale(0.99); }
+  </style>
+</head>
+<body>
+
+<div class="wrapper">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-tag">AI Powered</div>
+    <h1>Predict your <span>Exam Score</span></h1>
+    <p>Fill in your details below and get an instant prediction</p>
+  </div>
+
+  <!-- Form Card -->
+  <div class="card">
+    <form action="/predict" method="POST">
+
+      <!-- Academic Habits -->
+      <div class="section">
+        <p class="section-title">Academic Habits</p>
+        <div class="grid-2">
+
+          <div class="field">
+            <label>Hours Studied / week</label>
+            <div class="range-row">
+              <input type="range" name="Hours_Studied" min="0" max="44" value="20" step="1"
+                oninput="document.getElementById('v_hs').textContent=this.value">
+              <span class="range-val" id="v_hs">20</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Attendance (%)</label>
+            <div class="range-row">
+              <input type="range" name="Attendance" min="60" max="100" value="85" step="1"
+                oninput="document.getElementById('v_att').textContent=this.value">
+              <span class="range-val" id="v_att">85</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Sleep Hours / night</label>
+            <div class="range-row">
+              <input type="range" name="Sleep_Hours" min="4" max="10" value="7" step="1"
+                oninput="document.getElementById('v_sl').textContent=this.value">
+              <span class="range-val" id="v_sl">7</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Previous Scores (avg)</label>
+            <div class="range-row">
+              <input type="range" name="Previous_Scores" min="50" max="100" value="75" step="1"
+                oninput="document.getElementById('v_ps').textContent=this.value">
+              <span class="range-val" id="v_ps">75</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Tutoring Sessions / month</label>
+            <div class="range-row">
+              <input type="range" name="Tutoring_Sessions" min="0" max="8" value="2" step="1"
+                oninput="document.getElementById('v_tut').textContent=this.value">
+              <span class="range-val" id="v_tut">2</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Physical Activity (hrs/week)</label>
+            <div class="range-row">
+              <input type="range" name="Physical_Activity" min="0" max="6" value="3" step="1"
+                oninput="document.getElementById('v_phy').textContent=this.value">
+              <span class="range-val" id="v_phy">3</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Personal Factors -->
+      <div class="section">
+        <p class="section-title">Personal Factors</p>
+        <div class="grid-3">
+
+          <div class="field">
+            <label>Gender</label>
+            <select name="Gender">
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Internet Access</label>
+            <select name="Internet_Access">
+              <option value="Yes">Yes</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Motivation Level</label>
+            <select name="Motivation_Level">
+              <option value="High">High</option>
+              <option value="Medium" selected>Medium</option>
+              <option value="Low">Low</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Family Income</label>
+            <select name="Family_Income">
+              <option value="High">High</option>
+              <option value="Medium" selected>Medium</option>
+              <option value="Low">Low</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>School Type</label>
+            <select name="School_Type">
+              <option value="Public">Public</option>
+              <option value="Private">Private</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Extracurricular</label>
+            <select name="Extracurricular_Activities">
+              <option value="Yes">Yes</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Environment -->
+      <div class="section">
+        <p class="section-title">Environment & Support</p>
+        <div class="grid-3">
+
+          <div class="field">
+            <label>Teacher Quality</label>
+            <select name="Teacher_Quality">
+              <option value="High">High</option>
+              <option value="Medium" selected>Medium</option>
+              <option value="Low">Low</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Parental Involvement</label>
+            <select name="Parental_Involvement">
+              <option value="High">High</option>
+              <option value="Medium" selected>Medium</option>
+              <option value="Low">Low</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Access to Resources</label>
+            <select name="Access_to_Resources">
+              <option value="High">High</option>
+              <option value="Medium" selected>Medium</option>
+              <option value="Low">Low</option>
+            </select>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <div class="footer">
+        <button type="submit" class="btn-submit">Predict Exam Score →</button>
+      </div>
+
+    </form>
+  </div>
+
+</div>
+</body>
+</html>
